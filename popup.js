@@ -131,6 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateStatus('Auto Clicker started', 'running');
       updateButtons(true, true);
       startTimer();
+      window.close();
     });
   });
 
@@ -142,6 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateStatus('Auto Clicker stopped');
       updateButtons(true, false);
       stopTimer();
+      window.close();
     });
   });
 

@@ -37,3 +37,6 @@ coverage/
 
 # Release configuration
 .release.yml 
+
+# Task configuration
+.task/
