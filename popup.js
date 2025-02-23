@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateStatus(message, type = '') {
     statusElement.textContent = message;
     statusElement.className = 'status ' + type;
-    console.log(`[AutoClicker Popup] ${message}`);
+    console.log(`[RhythmKlk Popup] ${message}`);
   }
 
   function updateButtons(hasPoint, isRunning) {
@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Load saved settings
   chrome.storage.sync.get(['clickInterval', 'isClicking', 'debug', 'clickerPoint'], (result) => {
-    console.log('[AutoClicker Popup] Loading saved settings:', result);
+    console.log('[RhythmKlk Popup] Loading saved settings:', result);
     
     if (result.clickInterval) {
       intervalInput.value = result.clickInterval;
@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateButtons(hasPoint, isRunning);
     
     if (isRunning) {
-      updateStatus('Auto Clicker is running', 'running');
+      updateStatus('RhythmKlk is running', 'running');
       startTimer();
     } else if (hasPoint) {
       updateStatus('Point selected - Ready to start');
@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       chrome.tabs.sendMessage(tabs[0].id, { type: 'start' });
       chrome.storage.sync.set({ isClicking: true });
-      updateStatus('Auto Clicker started', 'running');
+      updateStatus('RhythmKlk started', 'running');
       updateButtons(true, true);
       startTimer();
       window.close();
@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       chrome.tabs.sendMessage(tabs[0].id, { type: 'stop' });
       chrome.storage.sync.set({ isClicking: false });
-      updateStatus('Auto Clicker stopped');
+      updateStatus('RhythmKlk stopped');
       updateButtons(true, false);
       stopTimer();
       window.close();
@@ -169,10 +169,10 @@ document.addEventListener('DOMContentLoaded', () => {
       // Update button states when badge state changes
       updateButtons(true, message.isRunning);
       if (message.isRunning) {
-        updateStatus('Auto Clicker is running', 'running');
+        updateStatus('RhythmKlk is running', 'running');
         startTimer();
       } else {
-        updateStatus('Auto Clicker stopped');
+        updateStatus('RhythmKlk stopped');
         stopTimer();
       }
     }

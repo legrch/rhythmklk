@@ -1,8 +1,8 @@
-# Auto Clicker - Расширение для Chrome
+# RhythmKlk - Расширение для Chrome
 
-Легкое и мощное расширение для автоматического кликера в Chrome с настраиваемыми интервалами и выбором точки клика.
+Легкое и мощное расширение для ритмичных кликов в Chrome с настраиваемыми интервалами и точным таймингом.
 
-![Скриншот Auto Clicker](screenshot.png)
+![Скриншот RhythmKlk](screenshot.png)
 
 ## Возможности
 
@@ -16,7 +16,7 @@
 ## Установка
 
 ### Способ 1: Прямая установка
-1. Скачайте [последний релиз](../../releases/latest/download/autoclicker.zip)
+1. Скачайте [последний релиз](../../releases/latest/download/rhythmklk.zip)
 2. Распакуйте скачанный файл
 3. Откройте Chrome и перейдите на `chrome://extensions/`
 4. Включите "Режим разработчика" в правом верхнем углу
@@ -25,8 +25,8 @@
 ### Способ 2: Установка из исходного кода
 1. Клонируйте репозиторий
 ```bash
-git clone https://github.com/YOUR_USERNAME/autoclicker.git
-cd autoclicker
+git clone https://github.com/YOUR_USERNAME/rhythmklk.git
+cd rhythmklk
 ```
 2. Откройте Chrome и перейдите на `chrome://extensions/`
 3. Включите "Режим разработчика" в правом верхнем углу

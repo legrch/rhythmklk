@@ -21,7 +21,7 @@ document.addEventListener('mousemove', (e) => {
 function debugLog(message, data = null) {
   if (clickerConfig.debug) {
     const timestamp = new Date().toISOString();
-    const logMessage = `[AutoClicker ${timestamp}] ${message}`;
+    const logMessage = `[RhythmKlk ${timestamp}] ${message}`;
     
     if (data) {
       // Format the data to be more readable
@@ -40,13 +40,13 @@ function isValidCoordinate(value) {
 
 // Show visual feedback
 function showFeedback(message, type = 'info') {
-  const existingFeedback = document.getElementById('autoclicker-feedback');
+  const existingFeedback = document.getElementById('rhythmklk-feedback');
   if (existingFeedback) {
     existingFeedback.remove();
   }
 
   const feedback = document.createElement('div');
-  feedback.id = 'autoclicker-feedback';
+  feedback.id = 'rhythmklk-feedback';
   feedback.style.cssText = `
     position: fixed;
     top: 20px;
@@ -298,12 +298,12 @@ function startClicker() {
     });
   });
   
-  debugLog('Auto Clicker started', {
+  debugLog('RhythmKlk started', {
     interval: clickerConfig.interval,
     jitterRange: clickerConfig.jitterRange,
     coordinates: { x: clickerConfig.x, y: clickerConfig.y }
   });
-  showFeedback('Auto Clicker Started');
+  showFeedback('RhythmKlk Started');
   
   // Schedule first click
   performClick();
@@ -338,10 +338,10 @@ function stopClicker() {
     });
   });
   
-  debugLog('Auto Clicker stopped', {
+  debugLog('RhythmKlk stopped', {
     lastCoordinates: { x: clickerConfig.x, y: clickerConfig.y }
   });
-  showFeedback('Auto Clicker Stopped');
+  showFeedback('RhythmKlk Stopped');
   
   if (clickerConfig.intervalId) {
     clearTimeout(clickerConfig.intervalId);
@@ -429,7 +429,7 @@ function injectClickHandler(iframe) {
     const script = document.createElement('script');
     script.textContent = `
       window.addEventListener('message', function(event) {
-        if (event.data && event.data.type === 'autoClickerClick') {
+        if (event.data && event.data.type === 'rhythmklkClick') {
           const x = event.data.coordinates.x;
           const y = event.data.coordinates.y;
           
@@ -463,7 +463,7 @@ function injectClickHandler(iframe) {
 
             // Send confirmation back to parent
             window.parent.postMessage({
-              type: 'autoClickerResponse',
+              type: 'rhythmklkResponse',
               success: true,
               element: {
                 tagName: element.tagName,
@@ -539,7 +539,7 @@ if (document.readyState === 'loading') {
 
 // Listen for click confirmations from iframes
 window.addEventListener('message', event => {
-  if (event.data && event.data.type === 'autoClickerResponse') {
+  if (event.data && event.data.type === 'rhythmklkResponse') {
     debugLog('Received click confirmation from iframe', event.data);
   }
 }); 

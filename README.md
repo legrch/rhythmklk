@@ -1,10 +1,10 @@
-# Auto Clicker Chrome Extension
+# RhythmKlk Chrome Extension
 
 [English](README.md) | [Русский](README.ru.md)
 
-A lightweight and powerful auto clicker extension for Chrome with customizable click intervals and point selection.
+A lightweight and powerful rhythmic clicking extension for Chrome with customizable intervals and precision timing.
 
-![Auto Clicker Screenshot](screenshot.png)
+![RhythmKlk Screenshot](screenshot.png)
 
 ## Features
 
@@ -18,7 +18,7 @@ A lightweight and powerful auto clicker extension for Chrome with customizable c
 ## Installation
 
 ### Method 1: Direct Installation
-1. Download the [latest release](../../releases/latest/download/autoclicker.zip)
+1. Download the [latest release](../../releases/latest/download/rhythmklk.zip)
 2. Unzip the downloaded file
 3. Open Chrome and go to `chrome://extensions/`
 4. Enable "Developer mode" in the top right
@@ -27,8 +27,8 @@ A lightweight and powerful auto clicker extension for Chrome with customizable c
 ### Method 2: Manual Build
 1. Clone this repository
 ```bash
-git clone https://github.com/YOUR_USERNAME/autoclicker.git
-cd autoclicker
+git clone https://github.com/YOUR_USERNAME/rhythmklk.git
+cd rhythmklk
 ```
 2. Open Chrome and go to `chrome://extensions/`
 3. Enable "Developer mode" in the top right
@@ -39,12 +39,12 @@ cd autoclicker
 1. Click the extension icon in Chrome toolbar
 2. Click "Choose Point" and select a point on the webpage
 3. Set your desired click interval (in seconds)
-4. Click "Start" to begin auto-clicking
-5. Click "Stop" to end auto-clicking
+4. Click "Start" to begin clicking
+5. Click "Stop" to end clicking
 
 ### Keyboard Shortcuts
 - `Ctrl+B` (Windows) / `Cmd+B` (Mac): Open extension popup
-- `Alt+S`: Toggle auto clicker on/off
+- `Alt+S`: Toggle RhythmKlk on/off
 
 ## Development
 

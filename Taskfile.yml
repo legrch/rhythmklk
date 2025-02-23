@@ -34,13 +34,16 @@ tasks:
     deps: [icons]
     cmds:
       - echo "Building extension..."
-      - zip -r autoclicker.zip . -x "*.git*" -x "node_modules/*" -x "*.zip" -x "test.html" -x "flash-test.html" -x "taskfile.yml" -x ".release.yml"
+      - rm -rf dist
+      - mkdir -p dist
+      - cp -r manifest.json popup.html popup.js content.js background.js icons dist/
+      - cd dist && zip -r rhythmklk.zip . -x "*.git*" -x "node_modules/*" -x "*.zip" -x "test.html" -x "flash-test.html" -x "taskfile.yml" -x ".release.yml"
 
   clean:
     desc: Clean generated files
     cmds:
       - rm -f icons/icon16.png icons/icon48.png icons/icon128.png
-      - rm -f extension.zip autoclicker.zip screenshot.png
+      - rm -f extension.zip rhythmklk.zip screenshot.png
 
   release:
     desc: Create and publish a new release
@@ -53,7 +56,7 @@ tasks:
         VERSION="{{.VERSION}}" && \
         TITLE=$(yq eval '.title' {{.RELEASE_CONFIG}} | envsubst) && \
         NOTES=$(yq eval '.notes' {{.RELEASE_CONFIG}} | envsubst) && \
-        gh release create v${VERSION} autoclicker.zip \
+        gh release create v${VERSION} rhythmklk.zip \
           --title "$TITLE" \
           --notes "$NOTES"
 
@@ -68,7 +71,7 @@ tasks:
         VERSION="{{.VERSION}}" && \
         TITLE=$(yq eval '.dev.title' {{.RELEASE_CONFIG}} | envsubst) && \
         NOTES=$(yq eval '.dev.notes' {{.RELEASE_CONFIG}} | envsubst) && \
-        gh release create v${VERSION} autoclicker.zip \
+        gh release create v${VERSION} rhythmklk.zip \
           --prerelease \
           --title "$TITLE" \
           --notes "$NOTES"
