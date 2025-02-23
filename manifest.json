@@ -6,7 +6,12 @@
   "permissions": [
     "activeTab",
     "storage",
-    "commands"
+    "commands",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*.vk.com/*",
+    "<all_urls>"
   ],
   "action": {
     "default_popup": "popup.html"
@@ -17,7 +22,8 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"]
+      "js": ["content.js"],
+      "all_frames": true
     }
   ],
   "commands": {
