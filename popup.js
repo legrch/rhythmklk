@@ -13,11 +13,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateButtons(hasPoint, isRunning) {
+    // Fix button states
     startButton.disabled = !hasPoint || isRunning;
     stopButton.disabled = !isRunning;
-    selectPointButton.textContent = hasPoint ? 'Change Point' : 'Select Point';
     
-    // Update button icons based on state
+    // Update select point button
     if (hasPoint) {
       selectPointButton.innerHTML = `
         <svg class="icon" viewBox="0 0 24 24">
@@ -32,6 +32,13 @@ document.addEventListener('DOMContentLoaded', () => {
         </svg>
         Select Point
       `;
+    }
+
+    // Update status class based on running state
+    if (isRunning) {
+      statusElement.classList.add('running');
+    } else {
+      statusElement.classList.remove('running');
     }
   }
 
@@ -93,6 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
   startButton.addEventListener('click', () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       chrome.tabs.sendMessage(tabs[0].id, { type: 'start' });
+      chrome.storage.sync.set({ isClicking: true }); // Save running state
       updateStatus('Auto Clicker started', 'running');
       updateButtons(true, true);
     });
@@ -102,6 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
   stopButton.addEventListener('click', () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       chrome.tabs.sendMessage(tabs[0].id, { type: 'stop' });
+      chrome.storage.sync.set({ isClicking: false }); // Save stopped state
       updateStatus('Auto Clicker stopped');
       updateButtons(true, false);
     });
