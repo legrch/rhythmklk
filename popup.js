@@ -5,14 +5,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const stopButton = document.getElementById('stopClicker');
   const statusElement = document.getElementById('status');
   const debugCheckbox = document.getElementById('debug');
-  const clickCountElement = document.getElementById('clickCount');
   const runTimeElement = document.getElementById('runTime');
 
   let startTime = null;
   let timerInterval = null;
 
-  function updateStats(clickCount = 0) {
-    clickCountElement.textContent = clickCount;
+  function updateStats() {
     if (startTime) {
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
       const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
@@ -25,9 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function startTimer() {
     startTime = Date.now();
-    timerInterval = setInterval(() => {
-      updateStats(parseInt(clickCountElement.textContent));
-    }, 1000);
+    timerInterval = setInterval(updateStats, 1000);
   }
 
   function stopTimer() {
@@ -36,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
       clearInterval(timerInterval);
       timerInterval = null;
     }
-    updateStats(0);
+    updateStats();
   }
 
   function updateStatus(message, type = '') {
@@ -46,11 +42,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateButtons(hasPoint, isRunning) {
-    // Fix button states
     startButton.disabled = !hasPoint || isRunning;
     stopButton.disabled = !isRunning;
     
-    // Update select point button
     if (hasPoint) {
       selectPointButton.innerHTML = `
         <svg class="icon" viewBox="0 0 24 24">
@@ -67,7 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
     }
 
-    // Update status class based on running state
     if (isRunning) {
       statusElement.classList.add('running');
     } else {
@@ -134,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
   startButton.addEventListener('click', () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       chrome.tabs.sendMessage(tabs[0].id, { type: 'start' });
-      chrome.storage.sync.set({ isClicking: true }); // Save running state
+      chrome.storage.sync.set({ isClicking: true });
       updateStatus('Auto Clicker started', 'running');
       updateButtons(true, true);
       startTimer();
@@ -145,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
   stopButton.addEventListener('click', () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       chrome.tabs.sendMessage(tabs[0].id, { type: 'stop' });
-      chrome.storage.sync.set({ isClicking: false }); // Save stopped state
+      chrome.storage.sync.set({ isClicking: false });
       updateStatus('Auto Clicker stopped');
       updateButtons(true, false);
       stopTimer();
@@ -170,9 +163,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (message.type === 'pointSelected') {
       updateButtons(true, false);
       updateStatus('Point selected - Ready to start');
-    } else if (message.type === 'clickPerformed') {
-      // Update click counter
-      clickCountElement.textContent = (parseInt(clickCountElement.textContent) || 0) + 1;
     }
   });
 

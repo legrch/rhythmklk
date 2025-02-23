@@ -4,7 +4,6 @@ let clickerConfig = {
   interval: 5000, // Default 5 seconds
   jitterRange: 1000, // ±1 second jitter
   isRunning: false,
-  clickCount: 0,
   intervalId: null,
   debug: true, // Debug mode enabled by default
   pointSelected: false // Track if point has been selected
@@ -243,17 +242,9 @@ function performClick() {
       targetElement.click();
     }
 
-    clickerConfig.clickCount++;
-    // Notify popup about the click
-    chrome.runtime.sendMessage({ 
-      type: 'clickPerformed',
-      count: clickerConfig.clickCount
-    });
-    
     debugLog('Click sequence completed', {
       element: targetElement.tagName,
       coordinates: { x: targetX, y: targetY },
-      clickCount: clickerConfig.clickCount,
       isInIframe,
       timestamp: new Date().toISOString()
     });
@@ -267,7 +258,6 @@ function performClick() {
       },
       state: {
         isRunning: clickerConfig.isRunning,
-        clickCount: clickerConfig.clickCount,
         isInIframe: window !== window.top
       }
     });
@@ -339,7 +329,6 @@ function stopClicker() {
   chrome.runtime.sendMessage({ type: 'updateBadge', isRunning: false });
   
   debugLog('Auto Clicker stopped', {
-    totalClicks: clickerConfig.clickCount,
     lastCoordinates: { x: clickerConfig.x, y: clickerConfig.y }
   });
   showFeedback('Auto Clicker Stopped');
