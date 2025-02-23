@@ -1,0 +1,41 @@
+# Production release example
+version: 1.2.3
+title: Version ${VERSION}
+notes: |
+  Auto Clicker Chrome Extension ${VERSION}
+
+  Changes:
+  - Added new feature X
+  - Fixed bug in Y
+  - Improved performance of Z
+  - Updated documentation
+
+  Features:
+  - Feature 1 description
+  - Feature 2 description
+  - Feature 3 description
+
+# Development release example
+dev:
+  version: 0.2.0-beta.1
+  title: Development Build ${VERSION}
+  notes: |
+    Development build for testing new features:
+    - Experimental feature A
+    - Testing integration B
+    - Performance improvements
+
+# Version format examples:
+# Production: MAJOR.MINOR.PATCH (1.0.0, 1.0.1, 1.1.0, 2.0.0)
+# Development: MAJOR.MINOR.PATCH-label.number (0.1.0-alpha.1, 0.2.0-beta.1, 1.0.0-rc.1)
+#
+# When to increment:
+# MAJOR - Breaking changes
+# MINOR - New features, backward compatible
+# PATCH - Bug fixes, backward compatible
+# 
+# Labels:
+# alpha - Early testing
+# beta - Feature complete, testing
+# rc - Release candidate
+# dev - Development build 
