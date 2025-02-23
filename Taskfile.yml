@@ -38,12 +38,14 @@ tasks:
       - mkdir -p dist
       - cp -r manifest.json popup.html popup.js content.js background.js icons dist/
       - cd dist && zip -r rhythmklk.zip . -x "*.git*" -x "node_modules/*" -x "*.zip" -x "test.html" -x "flash-test.html" -x "taskfile.yml" -x ".release.yml"
+      - mv dist/rhythmklk.zip .
 
   clean:
     desc: Clean generated files
     cmds:
       - rm -f icons/icon16.png icons/icon48.png icons/icon128.png
-      - rm -f extension.zip rhythmklk.zip screenshot.png
+      - rm -rf dist
+      - rm -f rhythmklk.zip screenshot.png
 
   release:
     desc: Create and publish a new release
