@@ -23,6 +23,12 @@ tasks:
       - icons/icon48.png
       - icons/icon128.png
 
+  screenshot:
+    desc: Create screenshot of the popup window
+    cmds:
+      - screencapture -i screenshot.png
+      - sips -Z 600 screenshot.png
+
   build:
     desc: Build the extension
     deps: [icons]
@@ -34,7 +40,7 @@ tasks:
     desc: Clean generated files
     cmds:
       - rm -f icons/icon16.png icons/icon48.png icons/icon128.png
-      - rm -f extension.zip autoclicker.zip
+      - rm -f extension.zip autoclicker.zip screenshot.png
 
   release:
     desc: Create and publish a new release

@@ -5,7 +5,7 @@ let clickerConfig = {
   jitterRange: 1000, // ±1 second jitter
   isRunning: false,
   intervalId: null,
-  debug: true, // Debug mode enabled by default
+  debug: false, // Debug mode desabled by default
   pointSelected: false // Track if point has been selected
 };
 
