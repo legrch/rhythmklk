@@ -1,6 +1,14 @@
 version: '3'
 
+vars:
+  RELEASE_CONFIG: .release.yml
+
 tasks:
+  install:
+    desc: Install required tools
+    cmds:
+      - brew install yq gettext gh librsvg
+
   icons:
     desc: Regenerate extension icons from SVG
     cmds:
@@ -20,13 +28,44 @@ tasks:
     deps: [icons]
     cmds:
       - echo "Building extension..."
-      - zip -r extension.zip . -x "*.git*" -x "node_modules/*" -x "*.zip"
+      - zip -r autoclicker.zip . -x "*.git*" -x "node_modules/*" -x "*.zip" -x "test.html" -x "flash-test.html" -x "taskfile.yml" -x ".release.yml"
 
   clean:
     desc: Clean generated files
     cmds:
       - rm -f icons/icon16.png icons/icon48.png icons/icon128.png
-      - rm -f extension.zip
+      - rm -f extension.zip autoclicker.zip
+
+  release:
+    desc: Create and publish a new release
+    deps: [build]
+    vars:
+      VERSION:
+        sh: yq eval '.version' {{.RELEASE_CONFIG}}
+    cmds:
+      - |
+        VERSION="{{.VERSION}}" && \
+        TITLE=$(yq eval '.title' {{.RELEASE_CONFIG}} | envsubst) && \
+        NOTES=$(yq eval '.notes' {{.RELEASE_CONFIG}} | envsubst) && \
+        gh release create v${VERSION} autoclicker.zip \
+          --title "$TITLE" \
+          --notes "$NOTES"
+
+  release:dev:
+    desc: Create a development pre-release
+    deps: [build]
+    vars:
+      VERSION:
+        sh: yq eval '.dev.version' {{.RELEASE_CONFIG}}
+    cmds:
+      - |
+        VERSION="{{.VERSION}}" && \
+        TITLE=$(yq eval '.dev.title' {{.RELEASE_CONFIG}} | envsubst) && \
+        NOTES=$(yq eval '.dev.notes' {{.RELEASE_CONFIG}} | envsubst) && \
+        gh release create v${VERSION} autoclicker.zip \
+          --prerelease \
+          --title "$TITLE" \
+          --notes "$NOTES"
 
   default:
     desc: Show available tasks

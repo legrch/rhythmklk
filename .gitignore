@@ -33,4 +33,7 @@ yarn-error.log*
 .env.*.local
 
 # Testing
-coverage/ 
+coverage/
+
+# Release configuration
+.release.yml 
