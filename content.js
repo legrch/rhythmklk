@@ -154,7 +154,16 @@ function performClick() {
   }
   
   try {
-    // Create mouse events with more complete configuration
+    // Find the element at click coordinates
+    const element = document.elementFromPoint(clickerConfig.x, clickerConfig.y);
+    
+    debugLog('Target element found', {
+      tagName: element?.tagName,
+      id: element?.id,
+      className: element?.className
+    });
+
+    // Create base event config
     const eventConfig = {
       bubbles: true,
       cancelable: true,
@@ -169,26 +178,82 @@ function performClick() {
       shiftKey: false,
       metaKey: false,
       button: 0,
-      relatedTarget: null
+      buttons: 1,
+      relatedTarget: null,
+      composed: true
     };
 
-    // Create and dispatch events in sequence
-    const events = [
-      new MouseEvent('mousedown', eventConfig),
-      new MouseEvent('mouseup', eventConfig),
-      new MouseEvent('click', eventConfig)
-    ];
+    if (element?.tagName === 'IFRAME') {
+      debugLog('Cross-origin iframe detected, using native events');
+      
+      try {
+        // Get iframe position
+        const rect = element.getBoundingClientRect();
+        
+        // Calculate relative coordinates within iframe
+        const iframeX = clickerConfig.x - rect.left;
+        const iframeY = clickerConfig.y - rect.top;
 
-    // Dispatch to both document and element at click coordinates
-    events.forEach(event => {
-      // Try to find the element at the click coordinates
-      const element = document.elementFromPoint(clickerConfig.x, clickerConfig.y);
-      if (element) {
-        element.dispatchEvent(event);
+        // Create a sequence of native mouse events
+        const nativeEvents = [
+          new MouseEvent('mouseover', eventConfig),
+          new MouseEvent('mouseenter', eventConfig),
+          new MouseEvent('mousemove', eventConfig),
+          new MouseEvent('mousedown', eventConfig),
+          new MouseEvent('mouseup', eventConfig),
+          new MouseEvent('click', eventConfig)
+        ];
+
+        // Focus the iframe first
+        element.focus();
+
+        // Dispatch events to the iframe element itself
+        nativeEvents.forEach(event => {
+          element.dispatchEvent(event);
+        });
+
+        // Create and dispatch a native click using a real mouse event
+        const clickEvent = new MouseEvent('click', {
+          ...eventConfig,
+          // Use iframe-relative coordinates
+          clientX: iframeX,
+          clientY: iframeY,
+          bubbles: true,
+          cancelable: true,
+          view: window,
+          detail: 1
+        });
+        
+        element.dispatchEvent(clickEvent);
+
+        debugLog('Native events dispatched to iframe', {
+          iframeCoordinates: { x: iframeX, y: iframeY },
+          windowCoordinates: { x: clickerConfig.x, y: clickerConfig.y },
+          iframeRect: rect
+        });
+      } catch (iframeError) {
+        debugLog('Native iframe click failed', {
+          error: iframeError.message
+        });
       }
-      // Also dispatch to document to ensure capture
-      document.dispatchEvent(event);
-    });
+    } else {
+      // For non-iframe elements, use the regular click sequence
+      const events = [
+        new MouseEvent('mouseover', eventConfig),
+        new MouseEvent('mouseenter', eventConfig),
+        new MouseEvent('mousemove', eventConfig),
+        new MouseEvent('mousedown', eventConfig),
+        new MouseEvent('mouseup', eventConfig),
+        new MouseEvent('click', eventConfig)
+      ];
+
+      events.forEach(event => {
+        if (element) {
+          element.dispatchEvent(event);
+        }
+        document.dispatchEvent(event);
+      });
+    }
     
     clickerConfig.clickCount++;
     debugLog('Click performed at coordinates', {
@@ -196,6 +261,7 @@ function performClick() {
         x: clickerConfig.x,
         y: clickerConfig.y
       },
+      element: element?.tagName,
       clickCount: clickerConfig.clickCount,
       timestamp: new Date().toISOString()
     });

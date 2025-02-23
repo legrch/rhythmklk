@@ -8,14 +8,31 @@
             padding: 20px;
             font-family: Arial, sans-serif;
         }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
         #clickArea {
             width: 100%;
-            height: 500px;
+            height: 300px;
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             border: 2px solid #2196F3;
             border-radius: 8px;
             position: relative;
             overflow: hidden;
+        }
+        #canvasArea {
+            width: 100%;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        #gameCanvas {
+            border: 2px solid #FF5722;
+            border-radius: 4px;
+            cursor: pointer;
         }
         #coordinates {
             position: fixed;
@@ -26,6 +43,7 @@
             padding: 10px;
             border-radius: 4px;
             font-family: monospace;
+            z-index: 1000;
         }
         #clickMarker {
             position: absolute;
@@ -52,7 +70,10 @@
             background-color: white;
             border-left: 3px solid #2196F3;
         }
-        h1 {
+        .canvas-click-record {
+            border-left-color: #FF5722;
+        }
+        h1, h2 {
             color: #333;
             margin-bottom: 20px;
         }
@@ -62,6 +83,48 @@
             background-color: #e3f2fd;
             border-radius: 4px;
         }
+        #canvasScore {
+            font-size: 18px;
+            margin: 10px 0;
+            color: #FF5722;
+        }
+        .flash-simulator {
+            width: 100%;
+            height: 400px;
+            border: 2px solid #673AB7;
+            border-radius: 4px;
+            margin-top: 20px;
+            position: relative;
+        }
+        .flash-click-area {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: #673AB7;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            transition: transform 0.2s;
+        }
+        .flash-click-area:hover {
+            transform: scale(1.1);
+        }
+        .flash-score {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        .iframe-container {
+            margin-top: 30px;
+        }
     </style>
 </head>
 <body>
@@ -70,15 +133,26 @@
     <div class="instructions">
         <h3>Instructions:</h3>
         <ol>
-            <li>Click anywhere in the test area below</li>
-            <li>Watch the red dot appear at click location</li>
-            <li>Coordinates will be displayed in the top right</li>
-            <li>Click history will be shown below the test area</li>
+            <li>Test regular clicks in the blue area</li>
+            <li>Test canvas clicks in the orange-bordered canvas below</li>
+            <li>All clicks will be logged in the history</li>
+            <li>Canvas clicks will show up in orange</li>
         </ol>
     </div>
 
-    <div id="clickArea">
-        <div id="clickMarker" style="display: none;"></div>
+    <div class="test-section">
+        <h2>Regular Click Test Area</h2>
+        <div id="clickArea">
+            <div id="clickMarker" style="display: none;"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Canvas Click Test Area</h2>
+        <div id="canvasArea">
+            <canvas id="gameCanvas" width="800" height="400"></canvas>
+            <div id="canvasScore">Canvas Clicks: 0</div>
+        </div>
     </div>
     
     <div id="coordinates">
@@ -90,20 +164,55 @@
         <h3>Click History</h3>
     </div>
 
+    <div class="test-section">
+        <h2>Flash/Iframe Test Area</h2>
+        <iframe id="testFrame" src="flash-test.html" width="100%" height="450" frameborder="0"></iframe>
+    </div>
+
     <script>
         const clickArea = document.getElementById('clickArea');
         const coordinates = document.getElementById('coordinates');
         const clickMarker = document.getElementById('clickMarker');
         const clickHistory = document.getElementById('clickHistory');
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const canvasScore = document.getElementById('canvasScore');
         let clickCount = 0;
+        let canvasClickCount = 0;
+
+        // Canvas setup and drawing
+        function drawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw background
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw target circles
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.arc(150 + i * 150, canvas.height/2, 30, 0, Math.PI * 2);
+                ctx.fillStyle = '#FF5722';
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+            
+            // Draw text
+            ctx.fillStyle = '#000';
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Click the circles!', canvas.width/2, 50);
+        }
 
         // Track mouse movement
         document.addEventListener('mousemove', (e) => {
-            coordinates.innerHTML = `Mouse: X: ${e.clientX}, Y: ${e.clientY}<br>Last Click: X: ${clickMarker.style.display === 'none' ? '-' : clickMarker.style.left}, Y: ${clickMarker.style.display === 'none' ? '-' : clickMarker.style.top}`;
+            coordinates.innerHTML = `Mouse: X: ${e.clientX}, Y: ${e.clientY}`;
         });
 
-        // Track clicks
-        document.addEventListener('click', (e) => {
+        // Track regular clicks
+        clickArea.addEventListener('click', (e) => {
             // Show click marker
             clickMarker.style.display = 'block';
             clickMarker.style.left = e.clientX + 'px';
@@ -123,8 +232,38 @@
             clickHistory.insertBefore(record, clickHistory.firstChild.nextSibling);
 
             // Update coordinates display
-            coordinates.innerHTML = `Mouse: X: ${e.clientX}, Y: ${e.clientY}<br>Last Click: X: ${e.clientX}, Y: ${e.clientY}`;
-        }, true); // Use capture phase
+            coordinates.innerHTML = `Mouse: X: ${e.clientX}, Y: ${e.clientY}`;
+        }, true);
+
+        // Track canvas clicks
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            canvasClickCount++;
+            canvasScore.textContent = `Canvas Clicks: ${canvasClickCount}`;
+
+            // Add to click history
+            const record = document.createElement('div');
+            record.className = 'click-record canvas-click-record';
+            record.innerHTML = `Canvas Click #${canvasClickCount} - X: ${x}, Y: ${y} (${new Date().toLocaleTimeString()})`;
+            if (e.isTrusted) {
+                record.innerHTML += ' (Real Click)';
+            } else {
+                record.innerHTML += ' (Simulated Click)';
+            }
+            clickHistory.insertBefore(record, clickHistory.firstChild.nextSibling);
+
+            // Visual feedback
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, Math.PI * 2);
+            ctx.fillStyle = '#4CAF50';
+            ctx.fill();
+            
+            // Clear feedback after a moment
+            setTimeout(() => drawCanvas(), 300);
+        }, true);
 
         // Log all mouse events for debugging
         ['mousedown', 'mouseup', 'click'].forEach(eventType => {
@@ -138,7 +277,25 @@
                     isTrusted: e.isTrusted,
                     timestamp: new Date().toISOString()
                 });
-            }, true); // Use capture phase
+            }, true);
+        });
+
+        // Initialize canvas
+        drawCanvas();
+
+        // Add iframe events to history
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'flashClick') {
+                const record = document.createElement('div');
+                record.className = 'click-record flash-click-record';
+                record.innerHTML = `Flash Click - Score: ${event.data.score} - X: ${event.data.coordinates.clientX}, Y: ${event.data.coordinates.clientY} (${new Date().toLocaleTimeString()})`;
+                if (event.data.isTrusted) {
+                    record.innerHTML += ' (Real Click)';
+                } else {
+                    record.innerHTML += ' (Simulated Click)';
+                }
+                clickHistory.insertBefore(record, clickHistory.firstChild.nextSibling);
+            }
         });
     </script>
 </body>
