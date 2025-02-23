@@ -244,6 +244,12 @@ function performClick() {
     }
 
     clickerConfig.clickCount++;
+    // Notify popup about the click
+    chrome.runtime.sendMessage({ 
+      type: 'clickPerformed',
+      count: clickerConfig.clickCount
+    });
+    
     debugLog('Click sequence completed', {
       element: targetElement.tagName,
       coordinates: { x: targetX, y: targetY },

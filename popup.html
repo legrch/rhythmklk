@@ -16,9 +16,11 @@
       --text-secondary: #7f8c8d;
       --border: #ecf0f1;
       --shadow: rgba(0, 0, 0, 0.1);
+      --disabled: #bdc3c7;
       --gradient-blue: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
       --gradient-green: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
       --gradient-red: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+      --gradient-disabled: linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%);
     }
 
     body {
@@ -134,7 +136,8 @@
     }
 
     button:disabled {
-      background: #bdc3c7;
+      background: var(--gradient-disabled);
+      opacity: 0.7;
       cursor: not-allowed;
       transform: none;
     }
@@ -234,6 +237,38 @@
       height: 14px;
       fill: currentColor;
     }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px;
+      background: var(--background);
+      border-radius: 6px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
   </style>
 </head>
 <body>
@@ -268,6 +303,17 @@
           </svg>
           Stop
         </button>
+      </div>
+
+      <div class="stats">
+        <div class="stat-item">
+          <span class="stat-label">Clicks</span>
+          <span class="stat-value" id="clickCount">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Time</span>
+          <span class="stat-value" id="runTime">00:00</span>
+        </div>
       </div>
 
       <div class="debug-group">

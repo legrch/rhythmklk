@@ -5,6 +5,39 @@ document.addEventListener('DOMContentLoaded', () => {
   const stopButton = document.getElementById('stopClicker');
   const statusElement = document.getElementById('status');
   const debugCheckbox = document.getElementById('debug');
+  const clickCountElement = document.getElementById('clickCount');
+  const runTimeElement = document.getElementById('runTime');
+
+  let startTime = null;
+  let timerInterval = null;
+
+  function updateStats(clickCount = 0) {
+    clickCountElement.textContent = clickCount;
+    if (startTime) {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+      const seconds = (elapsed % 60).toString().padStart(2, '0');
+      runTimeElement.textContent = `${minutes}:${seconds}`;
+    } else {
+      runTimeElement.textContent = '00:00';
+    }
+  }
+
+  function startTimer() {
+    startTime = Date.now();
+    timerInterval = setInterval(() => {
+      updateStats(parseInt(clickCountElement.textContent));
+    }, 1000);
+  }
+
+  function stopTimer() {
+    startTime = null;
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+    updateStats(0);
+  }
 
   function updateStatus(message, type = '') {
     statusElement.textContent = message;
@@ -57,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (isRunning) {
       updateStatus('Auto Clicker is running', 'running');
+      startTimer();
     } else if (hasPoint) {
       updateStatus('Point selected - Ready to start');
     } else {
@@ -103,6 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
       chrome.storage.sync.set({ isClicking: true }); // Save running state
       updateStatus('Auto Clicker started', 'running');
       updateButtons(true, true);
+      startTimer();
     });
   });
 
@@ -113,6 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
       chrome.storage.sync.set({ isClicking: false }); // Save stopped state
       updateStatus('Auto Clicker stopped');
       updateButtons(true, false);
+      stopTimer();
     });
   });
 
@@ -134,6 +170,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (message.type === 'pointSelected') {
       updateButtons(true, false);
       updateStatus('Point selected - Ready to start');
+    } else if (message.type === 'clickPerformed') {
+      // Update click counter
+      clickCountElement.textContent = (parseInt(clickCountElement.textContent) || 0) + 1;
+    }
+  });
+
+  // Clean up on popup close
+  window.addEventListener('unload', () => {
+    if (timerInterval) {
+      clearInterval(timerInterval);
     }
   });
 }); 
