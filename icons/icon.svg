@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
   <!-- Background circle -->
-  <circle cx="64" cy="64" r="60" fill="#524caa" opacity="0.1"/>
+  <rect x="0" y="0" width="128" height="128" fill="#8d9af4" opacity="0.5"/>
   
   <!-- Cursor (bigger) -->
-  <path d="M30 20L95 85L65 85L85 120L70 128L50 93L30 113Z" 
-        fill="#2196F3" 
-        stroke="#1976D2" 
+  <path d="M15 10L95 90L60 90L80 118L60 128L40 100L15 125Z" 
+        fill="#f3216e" 
+        stroke="#a299ec" 
         stroke-width="3"/>
   
   <!-- Click effect -->
-  <circle cx="95" cy="85" r="18" 
+  <circle cx="95" cy="90" r="20" 
           fill="none" 
           stroke="#4CAF50" 
           stroke-width="3"
           stroke-dasharray="4,4"/>
-</svg> 
+</svg>
