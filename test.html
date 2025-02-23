@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auto Clicker Test Page</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        #clickArea {
+            width: 100%;
+            height: 500px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border: 2px solid #2196F3;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        #coordinates {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        #clickMarker {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: red;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            opacity: 0.7;
+            transition: all 0.3s ease;
+        }
+        #clickHistory {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .click-record {
+            margin: 5px 0;
+            padding: 5px;
+            background-color: white;
+            border-left: 3px solid #2196F3;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .instructions {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #e3f2fd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Auto Clicker Test Page</h1>
+    
+    <div class="instructions">
+        <h3>Instructions:</h3>
+        <ol>
+            <li>Click anywhere in the test area below</li>
+            <li>Watch the red dot appear at click location</li>
+            <li>Coordinates will be displayed in the top right</li>
+            <li>Click history will be shown below the test area</li>
+        </ol>
+    </div>
+
+    <div id="clickArea">
+        <div id="clickMarker" style="display: none;"></div>
+    </div>
+    
+    <div id="coordinates">
+        Mouse: X: 0, Y: 0<br>
+        Last Click: X: -, Y: -
+    </div>
+    
+    <div id="clickHistory">
+        <h3>Click History</h3>
+    </div>
+
+    <script>
+        const clickArea = document.getElementById('clickArea');
+        const coordinates = document.getElementById('coordinates');
+        const clickMarker = document.getElementById('clickMarker');
+        const clickHistory = document.getElementById('clickHistory');
+        let clickCount = 0;
+
+        // Track mouse movement
+        document.addEventListener('mousemove', (e) => {
+            coordinates.innerHTML = `Mouse: X: ${e.clientX}, Y: ${e.clientY}<br>Last Click: X: ${clickMarker.style.display === 'none' ? '-' : clickMarker.style.left}, Y: ${clickMarker.style.display === 'none' ? '-' : clickMarker.style.top}`;
+        });
+
+        // Track clicks
+        document.addEventListener('click', (e) => {
+            // Show click marker
+            clickMarker.style.display = 'block';
+            clickMarker.style.left = e.clientX + 'px';
+            clickMarker.style.top = e.clientY + 'px';
+
+            // Add to click history
+            clickCount++;
+            const record = document.createElement('div');
+            record.className = 'click-record';
+            record.innerHTML = `Click #${clickCount} - X: ${e.clientX}, Y: ${e.clientY} (${new Date().toLocaleTimeString()})`;
+            if (e.isTrusted) {
+                record.innerHTML += ' (Real Click)';
+            } else {
+                record.innerHTML += ' (Simulated Click)';
+                record.style.borderLeftColor = '#FF5722';
+            }
+            clickHistory.insertBefore(record, clickHistory.firstChild.nextSibling);
+
+            // Update coordinates display
+            coordinates.innerHTML = `Mouse: X: ${e.clientX}, Y: ${e.clientY}<br>Last Click: X: ${e.clientX}, Y: ${e.clientY}`;
+        }, true); // Use capture phase
+
+        // Log all mouse events for debugging
+        ['mousedown', 'mouseup', 'click'].forEach(eventType => {
+            document.addEventListener(eventType, (e) => {
+                console.log(`${eventType} event:`, {
+                    clientX: e.clientX,
+                    clientY: e.clientY,
+                    pageX: e.pageX,
+                    pageY: e.pageY,
+                    target: e.target.tagName,
+                    isTrusted: e.isTrusted,
+                    timestamp: new Date().toISOString()
+                });
+            }, true); // Use capture phase
+        });
+    </script>
+</body>
+</html> 

@@ -9,6 +9,14 @@ let clickerConfig = {
   pointSelected: false // Track if point has been selected
 };
 
+let lastKnownCoordinates = { x: 0, y: 0 };
+
+// Track mouse movement
+document.addEventListener('mousemove', (e) => {
+  lastKnownCoordinates.x = e.clientX || e.pageX || e.x || lastKnownCoordinates.x;
+  lastKnownCoordinates.y = e.clientY || e.pageY || e.y || lastKnownCoordinates.y;
+});
+
 // Debug logger
 function debugLog(message, data = null) {
   if (clickerConfig.debug) {
@@ -63,20 +71,45 @@ function handlePointSelection(e) {
   e.preventDefault();
   e.stopPropagation();
   
-  // Get coordinates directly from the click event
-  const x = e.clientX;
-  const y = e.clientY;
+  // Use coordinates from the event or last known position
+  const x = e.clientX || e.pageX || e.x || lastKnownCoordinates.x;
+  const y = e.clientY || e.pageY || e.y || lastKnownCoordinates.y;
   
-  // Validate coordinates
-  if (!isValidCoordinate(x) || !isValidCoordinate(y)) {
-    debugLog('Invalid coordinates detected', {
+  // Add more detailed logging
+  debugLog('Click event received', {
+    eventCoords: {
       clientX: e.clientX,
       clientY: e.clientY,
       pageX: e.pageX,
-      pageY: e.pageY
+      pageY: e.pageY,
+      x: e.x,
+      y: e.y
+    },
+    lastKnownCoords: lastKnownCoordinates,
+    finalCoords: { x, y },
+    target: e.target.tagName,
+    currentTarget: e.currentTarget.tagName,
+    buttons: e.buttons,
+    type: e.type
+  });
+  
+  // Validate coordinates using last known position as fallback
+  if (!isValidCoordinate(x) || !isValidCoordinate(y)) {
+    debugLog('Invalid coordinates detected, using last known position', {
+      lastKnownCoordinates,
+      eventCoordinates: {
+        clientX: e.clientX,
+        clientY: e.clientY,
+        pageX: e.pageX,
+        pageY: e.pageY
+      }
     });
-    showFeedback('Invalid click point selected', 'error');
-    return;
+    
+    // If we don't even have valid last known coordinates, show error
+    if (!isValidCoordinate(lastKnownCoordinates.x) || !isValidCoordinate(lastKnownCoordinates.y)) {
+      showFeedback('Could not detect click position. Please try again.', 'error');
+      return;
+    }
   }
   
   // Store the validated coordinates
@@ -121,33 +154,39 @@ function performClick() {
   }
   
   try {
-    // Create mouse events
+    // Create mouse events with more complete configuration
+    const eventConfig = {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+      detail: 1,
+      screenX: clickerConfig.x,
+      screenY: clickerConfig.y,
+      clientX: clickerConfig.x,
+      clientY: clickerConfig.y,
+      ctrlKey: false,
+      altKey: false,
+      shiftKey: false,
+      metaKey: false,
+      button: 0,
+      relatedTarget: null
+    };
+
+    // Create and dispatch events in sequence
     const events = [
-      new MouseEvent('mousedown', {
-        bubbles: true,
-        cancelable: true,
-        view: window,
-        clientX: clickerConfig.x,
-        clientY: clickerConfig.y
-      }),
-      new MouseEvent('mouseup', {
-        bubbles: true,
-        cancelable: true,
-        view: window,
-        clientX: clickerConfig.x,
-        clientY: clickerConfig.y
-      }),
-      new MouseEvent('click', {
-        bubbles: true,
-        cancelable: true,
-        view: window,
-        clientX: clickerConfig.x,
-        clientY: clickerConfig.y
-      })
+      new MouseEvent('mousedown', eventConfig),
+      new MouseEvent('mouseup', eventConfig),
+      new MouseEvent('click', eventConfig)
     ];
 
-    // Dispatch all events to document
+    // Dispatch to both document and element at click coordinates
     events.forEach(event => {
+      // Try to find the element at the click coordinates
+      const element = document.elementFromPoint(clickerConfig.x, clickerConfig.y);
+      if (element) {
+        element.dispatchEvent(event);
+      }
+      // Also dispatch to document to ensure capture
       document.dispatchEvent(event);
     });
     
