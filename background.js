@@ -1,34 +1,32 @@
-// Initialize extension
-chrome.runtime.onInstalled.addListener(() => {
-  console.log('Auto Clicker extension installed');
+// Update badge when clicker status changes
+function updateBadge(isRunning) {
+  chrome.action.setBadgeText({
+    text: isRunning ? 'ON' : ''
+  });
+  chrome.action.setBadgeBackgroundColor({
+    color: isRunning ? '#4CAF50' : '#666666'
+  });
+}
+
+// Listen for messages from content script and popup
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'updateBadge') {
+    updateBadge(message.isRunning);
+  }
 });
 
-// Listen for keyboard commands
-chrome.commands.onCommand.addListener(async (command) => {
-  console.log('Command received:', command);
-  
+// Initialize badge state from storage
+chrome.storage.sync.get(['isClicking'], (result) => {
+  updateBadge(result.isClicking || false);
+});
+
+// Handle keyboard shortcuts
+chrome.commands.onCommand.addListener((command) => {
   if (command === 'toggle-clicker') {
-    try {
-      // Get the active tab
-      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-      console.log('Active tabs:', tabs);
-      
-      if (!tabs || tabs.length === 0) {
-        console.error('No active tab found');
-        return;
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]) {
+        chrome.tabs.sendMessage(tabs[0].id, { type: 'toggleClicker' });
       }
-      
-      const activeTab = tabs[0];
-      console.log('Sending toggle message to tab:', activeTab.id);
-      
-      // Send toggle message to content script
-      await chrome.tabs.sendMessage(activeTab.id, { 
-        type: 'toggle',
-        timestamp: Date.now()
-      });
-      console.log('Toggle message sent successfully');
-    } catch (error) {
-      console.error('Error in command handler:', error);
-    }
+    });
   }
 }); 

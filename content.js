@@ -1,7 +1,8 @@
 let clickerConfig = {
   x: null,
   y: null,
-  interval: 6000, // Default 6 seconds
+  interval: 5000, // Default 5 seconds
+  jitterRange: 1000, // ±1 second jitter
   isRunning: false,
   clickCount: 0,
   intervalId: null,
@@ -267,6 +268,18 @@ function performClick() {
   }
 }
 
+// Get next interval with jitter
+function getNextInterval() {
+  const jitter = (Math.random() * 2 - 1) * clickerConfig.jitterRange; // Random value between -jitterRange and +jitterRange
+  const nextInterval = clickerConfig.interval + jitter;
+  debugLog('Next interval calculated', {
+    baseInterval: clickerConfig.interval,
+    jitter,
+    nextInterval
+  });
+  return Math.max(nextInterval, 1000); // Ensure minimum 1 second interval
+}
+
 // Start auto clicker
 function startClicker() {
   if (!clickerConfig.pointSelected) {
@@ -282,15 +295,30 @@ function startClicker() {
 
   clickerConfig.isRunning = true;
   chrome.storage.sync.set({ isClicking: true });
+  chrome.runtime.sendMessage({ type: 'updateBadge', isRunning: true });
   
   debugLog('Auto Clicker started', {
     interval: clickerConfig.interval,
+    jitterRange: clickerConfig.jitterRange,
     coordinates: { x: clickerConfig.x, y: clickerConfig.y }
   });
   showFeedback('Auto Clicker Started');
   
-  performClick(); // Immediate first click
-  clickerConfig.intervalId = setInterval(performClick, clickerConfig.interval);
+  // Schedule first click
+  performClick();
+  
+  // Use recursive setTimeout for variable intervals
+  function scheduleNextClick() {
+    if (!clickerConfig.isRunning) return;
+    
+    const nextInterval = getNextInterval();
+    clickerConfig.intervalId = setTimeout(() => {
+      performClick();
+      scheduleNextClick(); // Schedule next click after performing current one
+    }, nextInterval);
+  }
+  
+  scheduleNextClick();
 }
 
 // Stop auto clicker
@@ -302,6 +330,7 @@ function stopClicker() {
 
   clickerConfig.isRunning = false;
   chrome.storage.sync.set({ isClicking: false });
+  chrome.runtime.sendMessage({ type: 'updateBadge', isRunning: false });
   
   debugLog('Auto Clicker stopped', {
     totalClicks: clickerConfig.clickCount,
@@ -310,7 +339,7 @@ function stopClicker() {
   showFeedback('Auto Clicker Stopped');
   
   if (clickerConfig.intervalId) {
-    clearInterval(clickerConfig.intervalId);
+    clearTimeout(clickerConfig.intervalId);
     clickerConfig.intervalId = null;
   }
 }
@@ -341,14 +370,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         newInterval: clickerConfig.interval
       });
       if (clickerConfig.isRunning) {
-        clearInterval(clickerConfig.intervalId);
-        clickerConfig.intervalId = setInterval(performClick, clickerConfig.interval);
+        clearTimeout(clickerConfig.intervalId);
+        clickerConfig.intervalId = setTimeout(() => {
+          performClick();
+        }, clickerConfig.interval);
         debugLog('Interval timer reset with new value');
       }
       break;
     case 'setDebug':
       clickerConfig.debug = message.enabled;
       debugLog(`Debug mode ${message.enabled ? 'enabled' : 'disabled'}`);
+      break;
+    case 'toggleClicker':
+      if (clickerConfig.isRunning) {
+        stopClicker();
+      } else {
+        startClicker();
+      }
       break;
   }
 });

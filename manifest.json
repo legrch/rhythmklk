@@ -3,6 +3,19 @@
   "name": "Auto Clicker",
   "version": "1.0",
   "description": "Automatically click at selected points with customizable intervals",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
   "permissions": [
     "activeTab",
     "storage",
@@ -13,9 +26,6 @@
     "*://*.vk.com/*",
     "<all_urls>"
   ],
-  "action": {
-    "default_popup": "popup.html"
-  },
   "background": {
     "service_worker": "background.js"
   },

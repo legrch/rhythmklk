@@ -1,0 +1,34 @@
+version: '3'
+
+tasks:
+  icons:
+    desc: Regenerate extension icons from SVG
+    cmds:
+      - mkdir -p icons
+      - rsvg-convert -h 16 icons/icon.svg > icons/icon16.png
+      - rsvg-convert -h 48 icons/icon.svg > icons/icon48.png
+      - rsvg-convert -h 128 icons/icon.svg > icons/icon128.png
+    sources:
+      - icons/icon.svg
+    generates:
+      - icons/icon16.png
+      - icons/icon48.png
+      - icons/icon128.png
+
+  build:
+    desc: Build the extension
+    deps: [icons]
+    cmds:
+      - echo "Building extension..."
+      - zip -r extension.zip . -x "*.git*" -x "node_modules/*" -x "*.zip"
+
+  clean:
+    desc: Clean generated files
+    cmds:
+      - rm -f icons/icon16.png icons/icon48.png icons/icon128.png
+      - rm -f extension.zip
+
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list 
