@@ -6,8 +6,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const statusElement = document.getElementById('status');
   const debugCheckbox = document.getElementById('debug');
 
-  function updateStatus(message) {
-    statusElement.textContent = `Status: ${message}`;
+  function updateStatus(message, type = '') {
+    statusElement.textContent = message;
+    statusElement.className = 'status ' + type;
     console.log(`[AutoClicker Popup] ${message}`);
   }
 
@@ -15,6 +16,23 @@ document.addEventListener('DOMContentLoaded', () => {
     startButton.disabled = !hasPoint || isRunning;
     stopButton.disabled = !isRunning;
     selectPointButton.textContent = hasPoint ? 'Change Point' : 'Select Point';
+    
+    // Update button icons based on state
+    if (hasPoint) {
+      selectPointButton.innerHTML = `
+        <svg class="icon" viewBox="0 0 24 24">
+          <path d="M19,19H5V5H19V19M19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M13,17H15V7H13V17M9,17H11V7H9V17Z"/>
+        </svg>
+        Change Point
+      `;
+    } else {
+      selectPointButton.innerHTML = `
+        <svg class="icon" viewBox="0 0 24 24">
+          <path d="M7,2L17,12L7,22L7,2M9,6.83L13.17,11L9,15.17V6.83Z"/>
+        </svg>
+        Select Point
+      `;
+    }
   }
 
   // Load saved settings
@@ -31,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateButtons(hasPoint, isRunning);
     
     if (isRunning) {
-      updateStatus('Auto Clicker is running');
+      updateStatus('Auto Clicker is running', 'running');
     } else if (hasPoint) {
       updateStatus('Point selected - Ready to start');
     } else {
@@ -66,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
         type: 'startSelection',
         shouldStopCurrent: true
       });
-      updateStatus('Click on the page to select point');
+      updateStatus('Click on the page to select point', 'selecting');
       window.close();
     });
   });
@@ -75,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
   startButton.addEventListener('click', () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       chrome.tabs.sendMessage(tabs[0].id, { type: 'start' });
-      updateStatus('Auto Clicker started');
+      updateStatus('Auto Clicker started', 'running');
       updateButtons(true, true);
     });
   });
