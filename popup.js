@@ -158,11 +158,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Listen for point selection updates
+  // Listen for point selection and badge updates
   chrome.runtime.onMessage.addListener((message) => {
     if (message.type === 'pointSelected') {
       updateButtons(true, false);
       updateStatus('Point selected - Ready to start');
+    } else if (message.type === 'updateBadge') {
+      // Update button states when badge state changes
+      updateButtons(true, message.isRunning);
+      if (message.isRunning) {
+        updateStatus('Auto Clicker is running', 'running');
+        startTimer();
+      } else {
+        updateStatus('Auto Clicker stopped');
+        stopTimer();
+      }
     }
   });
 

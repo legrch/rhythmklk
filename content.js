@@ -290,8 +290,13 @@ function startClicker() {
   }
 
   clickerConfig.isRunning = true;
-  chrome.storage.sync.set({ isClicking: true });
-  chrome.runtime.sendMessage({ type: 'updateBadge', isRunning: true });
+  // Ensure we set isClicking to true in storage and notify the popup
+  chrome.storage.sync.set({ isClicking: true }, () => {
+    chrome.runtime.sendMessage({ 
+      type: 'updateBadge',
+      isRunning: true
+    });
+  });
   
   debugLog('Auto Clicker started', {
     interval: clickerConfig.interval,
@@ -325,8 +330,13 @@ function stopClicker() {
   }
 
   clickerConfig.isRunning = false;
-  chrome.storage.sync.set({ isClicking: false });
-  chrome.runtime.sendMessage({ type: 'updateBadge', isRunning: false });
+  // Ensure we set isClicking to false in storage and notify the popup
+  chrome.storage.sync.set({ isClicking: false }, () => {
+    chrome.runtime.sendMessage({ 
+      type: 'updateBadge',
+      isRunning: false
+    });
+  });
   
   debugLog('Auto Clicker stopped', {
     lastCoordinates: { x: clickerConfig.x, y: clickerConfig.y }
