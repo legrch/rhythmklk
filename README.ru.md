@@ -25,7 +25,7 @@
 ### Способ 2: Установка из исходного кода
 1. Клонируйте репозиторий
 ```bash
-git clone https://github.com/YOUR_USERNAME/rhythmklk.git
+git clone https://github.com/achepkin/rhythmklk.git
 cd rhythmklk
 ```
 2. Откройте Chrome и перейдите на `chrome://extensions/`

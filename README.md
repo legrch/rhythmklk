@@ -27,7 +27,7 @@ A lightweight and powerful rhythmic clicking extension for Chrome with customiza
 ### Method 2: Manual Build
 1. Clone this repository
 ```bash
-git clone https://github.com/YOUR_USERNAME/rhythmklk.git
+git clone https://github.com/achepkin/rhythmklk.git
 cd rhythmklk
 ```
 2. Open Chrome and go to `chrome://extensions/`
