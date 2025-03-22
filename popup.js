@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const stopButton = document.getElementById('stopClicker');
   const statusElement = document.getElementById('status');
   const debugCheckbox = document.getElementById('debug');
+  const jitterCheckbox = document.getElementById('jitter');
   const runTimeElement = document.getElementById('runTime');
   const pointsList = document.getElementById('pointsList');
   const clearPointsButton = document.getElementById('clearPoints');
@@ -138,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Load saved settings
-  chrome.storage.sync.get(['clickerPoints', 'clickInterval', 'isClicking', 'debug'], (result) => {
+  chrome.storage.sync.get(['clickerPoints', 'clickInterval', 'isClicking', 'debug', 'jitter'], (result) => {
     console.log('[RhythmKlk Popup] Loading saved settings:', result);
     
     if (result.clickInterval) {
@@ -173,6 +174,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     debugCheckbox.checked = result.debug !== false;
+    
+    // Initialize jitter setting (true by default if not set)
+    jitterCheckbox.checked = result.jitter !== false;
   });
 
   // Save interval when changed
@@ -265,6 +269,19 @@ document.addEventListener('DOMContentLoaded', () => {
       chrome.tabs.sendMessage(tabs[0].id, { 
         type: 'setDebug', 
         enabled: debugEnabled 
+      });
+    });
+  });
+
+  // Handle jitter toggle
+  jitterCheckbox.addEventListener('change', () => {
+    const jitterEnabled = jitterCheckbox.checked;
+    chrome.storage.sync.set({ jitter: jitterEnabled });
+    
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.tabs.sendMessage(tabs[0].id, { 
+        type: 'setJitter', 
+        enabled: jitterEnabled 
       });
     });
   });

@@ -1,8 +1,9 @@
 let clickerConfig = {
   points: [], // Array to store multiple click points
   currentPointIndex: 0, // Track which point to click next
-  interval: 1000, // Default 1 second
-  jitterRange: 500, // ±0.5 second jitter
+  interval: 5000, // Default 5 seconds
+  jitterRange: 1000, // ±1 second jitter
+  jitterEnabled: true, // Jitter enabled by default
   isRunning: false,
   intervalId: null,
   debug: false, // Debug mode desabled by default
@@ -274,14 +275,21 @@ function performClick() {
 
 // Get next interval with jitter
 function getNextInterval() {
-  const jitter = (Math.random() * 2 - 1) * clickerConfig.jitterRange; // Random value between -jitterRange and +jitterRange
-  const nextInterval = clickerConfig.interval + jitter;
-  debugLog('Next interval calculated', {
-    baseInterval: clickerConfig.interval,
-    jitter,
-    nextInterval
-  });
-  return Math.max(nextInterval, 1000); // Ensure minimum 1 second interval
+  if (clickerConfig.jitterEnabled) {
+    const jitter = (Math.random() * 2 - 1) * clickerConfig.jitterRange; // Random value between -jitterRange and +jitterRange
+    const nextInterval = clickerConfig.interval + jitter;
+    debugLog('Next interval calculated with jitter', {
+      baseInterval: clickerConfig.interval,
+      jitter,
+      nextInterval
+    });
+    return Math.max(nextInterval, 1000); // Ensure minimum 1 second interval
+  } else {
+    debugLog('Next interval without jitter', {
+      interval: clickerConfig.interval
+    });
+    return clickerConfig.interval;
+  }
 }
 
 // Start auto clicker
@@ -491,11 +499,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case 'resetState':
       resetState();
       break;
+    case 'setJitter':
+      clickerConfig.jitterEnabled = message.enabled;
+      debugLog(`Jitter mode ${message.enabled ? 'enabled' : 'disabled'}`);
+      break;
   }
 });
 
 // Load saved configuration
-chrome.storage.sync.get(['clickerPoints', 'clickInterval', 'debug'], (result) => {
+chrome.storage.sync.get(['clickerPoints', 'clickInterval', 'debug', 'jitter'], (result) => {
   debugLog('Loading saved configuration', result);
   
   if (result.clickerPoints && result.clickerPoints.length > 0) {
@@ -510,6 +522,10 @@ chrome.storage.sync.get(['clickerPoints', 'clickInterval', 'debug'], (result) =>
   if (typeof result.debug !== 'undefined') {
     clickerConfig.debug = result.debug;
     debugLog('Restored debug mode setting', { debug: clickerConfig.debug });
+  }
+  if (typeof result.jitter !== 'undefined') {
+    clickerConfig.jitterEnabled = result.jitter;
+    debugLog('Restored jitter setting', { jitter: clickerConfig.jitterEnabled });
   }
 });
 
