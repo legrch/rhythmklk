@@ -1,12 +1,12 @@
 let clickerConfig = {
-  x: null,
-  y: null,
-  interval: 5000, // Default 5 seconds
-  jitterRange: 1000, // ±1 second jitter
+  points: [], // Array to store multiple click points
+  currentPointIndex: 0, // Track which point to click next
+  interval: 1000, // Default 1 second
+  jitterRange: 500, // ±0.5 second jitter
   isRunning: false,
   intervalId: null,
   debug: false, // Debug mode desabled by default
-  pointSelected: false // Track if point has been selected
+  pointSelected: false // Track if any point has been selected
 };
 
 let lastKnownCoordinates = { x: 0, y: 0 };
@@ -112,43 +112,48 @@ function handlePointSelection(e) {
     }
   }
   
-  // Store the validated coordinates
-  clickerConfig.x = x;
-  clickerConfig.y = y;
-  clickerConfig.pointSelected = true;
+  // Create the new point
+  const newPoint = { x, y };
   
-  // Save coordinates
+  // Store the validated coordinates in the points array
+  clickerConfig.points.push(newPoint);
+  clickerConfig.pointSelected = clickerConfig.points.length > 0;
+  
+  // Save all points
   chrome.storage.sync.set({ 
-    clickerPoint: { 
-      x: clickerConfig.x, 
-      y: clickerConfig.y 
-    } 
+    clickerPoints: clickerConfig.points
   });
   
-  // Remove the click listener
-  document.removeEventListener('click', handlePointSelection, true);
+  // Don't remove the click listener - keep collecting points
+  // document.removeEventListener('click', handlePointSelection, true);
   
   // Log the selection
-  debugLog('Click point selected', {
-    coordinates: {
-      x: clickerConfig.x,
-      y: clickerConfig.y
-    }
+  debugLog('Click point added', {
+    newPoint,
+    allPoints: clickerConfig.points
   });
   
   // Show visual feedback
-  showFeedback('Click point selected!');
+  showFeedback(`Click point ${clickerConfig.points.length} added!`);
   
   // Notify popup about point selection
-  chrome.runtime.sendMessage({ type: 'pointSelected' });
+  chrome.runtime.sendMessage({ 
+    type: 'pointSelected',
+    pointCount: clickerConfig.points.length,
+    point: newPoint
+  });
 }
 
 // Perform click at the selected point
 function performClick() {
-  if (!isValidCoordinate(clickerConfig.x) || !isValidCoordinate(clickerConfig.y)) {
+  // Get current point to click
+  const currentPoint = clickerConfig.points[clickerConfig.currentPointIndex];
+  
+  if (!currentPoint || !isValidCoordinate(currentPoint.x) || !isValidCoordinate(currentPoint.y)) {
     debugLog('Invalid click coordinates', {
-      x: clickerConfig.x,
-      y: clickerConfig.y
+      currentPoint,
+      currentIndex: clickerConfig.currentPointIndex,
+      totalPoints: clickerConfig.points.length
     });
     return;
   }
@@ -156,12 +161,12 @@ function performClick() {
   try {
     // Check if we're in an iframe
     const isInIframe = window !== window.top;
-    let targetX = clickerConfig.x;
-    let targetY = clickerConfig.y;
+    let targetX = currentPoint.x;
+    let targetY = currentPoint.y;
 
     // If we're in the main page, find the target iframe and adjust coordinates
     if (!isInIframe) {
-      const element = document.elementFromPoint(clickerConfig.x, clickerConfig.y);
+      const element = document.elementFromPoint(currentPoint.x, currentPoint.y);
       
       debugLog('Target element found in main frame', {
         tagName: element?.tagName,
@@ -172,11 +177,11 @@ function performClick() {
 
       if (element?.tagName === 'IFRAME') {
         const rect = element.getBoundingClientRect();
-        targetX = clickerConfig.x - rect.left;
-        targetY = clickerConfig.y - rect.top;
+        targetX = currentPoint.x - rect.left;
+        targetY = currentPoint.y - rect.top;
 
         debugLog('Adjusted coordinates for iframe', {
-          original: { x: clickerConfig.x, y: clickerConfig.y },
+          original: { x: currentPoint.x, y: currentPoint.y },
           adjusted: { x: targetX, y: targetY },
           iframeRect: rect
         });
@@ -195,6 +200,7 @@ function performClick() {
     }
 
     debugLog('Attempting click on element', {
+      pointIndex: clickerConfig.currentPointIndex,
       tagName: targetElement.tagName,
       id: targetElement.id,
       className: targetElement.className,
@@ -243,6 +249,7 @@ function performClick() {
     }
 
     debugLog('Click sequence completed', {
+      pointIndex: clickerConfig.currentPointIndex,
       element: targetElement.tagName,
       coordinates: { x: targetX, y: targetY },
       isInIframe,
@@ -252,16 +259,17 @@ function performClick() {
   } catch (error) {
     debugLog('Click operation failed', {
       error: error.message,
-      coordinates: {
-        x: clickerConfig.x,
-        y: clickerConfig.y
-      },
+      currentPoint,
+      currentIndex: clickerConfig.currentPointIndex,
       state: {
         isRunning: clickerConfig.isRunning,
         isInIframe: window !== window.top
       }
     });
   }
+  
+  // Move to the next point for the next click
+  clickerConfig.currentPointIndex = (clickerConfig.currentPointIndex + 1) % clickerConfig.points.length;
 }
 
 // Get next interval with jitter
@@ -278,9 +286,16 @@ function getNextInterval() {
 
 // Start auto clicker
 function startClicker() {
-  if (!clickerConfig.pointSelected) {
-    showFeedback('Please select a click point first', 'error');
-    debugLog('Start attempted without selected point');
+  debugLog('Starting clicker with config', {
+    points: clickerConfig.points,
+    pointCount: clickerConfig.points.length,
+    pointSelected: clickerConfig.pointSelected,
+    isRunning: clickerConfig.isRunning
+  });
+
+  if (clickerConfig.points.length === 0) {
+    showFeedback('Please select at least one click point first', 'error');
+    debugLog('Start attempted without selected points');
     return;
   }
 
@@ -290,6 +305,8 @@ function startClicker() {
   }
 
   clickerConfig.isRunning = true;
+  clickerConfig.currentPointIndex = 0; // Start from the first point
+  
   // Ensure we set isClicking to true in storage and notify the popup
   chrome.storage.sync.set({ isClicking: true }, () => {
     chrome.runtime.sendMessage({ 
@@ -301,7 +318,7 @@ function startClicker() {
   debugLog('RhythmKlk started', {
     interval: clickerConfig.interval,
     jitterRange: clickerConfig.jitterRange,
-    coordinates: { x: clickerConfig.x, y: clickerConfig.y }
+    points: clickerConfig.points
   });
   showFeedback('RhythmKlk Started');
   
@@ -338,15 +355,70 @@ function stopClicker() {
     });
   });
   
+  // Get the last clicked point safely
+  const lastIndex = clickerConfig.currentPointIndex > 0 
+    ? clickerConfig.currentPointIndex - 1 
+    : clickerConfig.points.length - 1;
+  
+  const lastPoint = clickerConfig.points[lastIndex] || { x: 0, y: 0 };
+  
   debugLog('RhythmKlk stopped', {
-    lastCoordinates: { x: clickerConfig.x, y: clickerConfig.y }
+    lastPoint,
+    pointCount: clickerConfig.points.length
   });
+  
   showFeedback('RhythmKlk Stopped');
   
   if (clickerConfig.intervalId) {
     clearTimeout(clickerConfig.intervalId);
     clickerConfig.intervalId = null;
   }
+}
+
+// Function to stop point selection mode
+function stopPointSelection() {
+  document.removeEventListener('click', handlePointSelection, true);
+  document.removeEventListener('keydown', handleSelectionKeyPress);
+  
+  debugLog('Point selection mode stopped', {
+    pointsCollected: clickerConfig.points.length
+  });
+  
+  showFeedback('Point selection completed');
+  
+  // Notify popup about selection completed
+  chrome.runtime.sendMessage({ 
+    type: 'selectionCompleted',
+    pointCount: clickerConfig.points.length
+  });
+}
+
+// Handle keypress during selection mode
+function handleSelectionKeyPress(e) {
+  // Stop selection mode when Escape key is pressed
+  if (e.key === 'Escape') {
+    stopPointSelection();
+  }
+}
+
+// Function to reset clicker state
+function resetState() {
+  if (clickerConfig.isRunning) {
+    stopClicker();
+  }
+  
+  clickerConfig.points = [];
+  clickerConfig.pointSelected = false;
+  clickerConfig.currentPointIndex = 0;
+  
+  chrome.storage.sync.set({
+    clickerPoints: [],
+    isClicking: false
+  }, () => {
+    debugLog('Clicker state fully reset');
+  });
+  
+  showFeedback('Clicker state reset');
 }
 
 // Listen for messages from popup
@@ -358,8 +430,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message.shouldStopCurrent && clickerConfig.isRunning) {
         stopClicker();
       }
-      debugLog('Starting point selection mode');
+      
+      // Clear existing points when starting selection mode
+      resetState();
+      
+      debugLog('Starting point selection mode with cleared points');
       document.addEventListener('click', handlePointSelection, true);
+      document.addEventListener('keydown', handleSelectionKeyPress);
+      
+      showFeedback('Click to add points. Press ESC when done.');
       break;
     case 'start':
       startClicker();
@@ -382,6 +461,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         debugLog('Interval timer reset with new value');
       }
       break;
+    case 'updatePoints':
+      clickerConfig.points = message.points || [];
+      clickerConfig.pointSelected = clickerConfig.points.length > 0;
+      clickerConfig.currentPointIndex = 0;
+      
+      debugLog('Points updated from popup', {
+        points: clickerConfig.points,
+        count: clickerConfig.points.length
+      });
+      
+      // Save to storage
+      chrome.storage.sync.set({ clickerPoints: clickerConfig.points });
+      break;
     case 'setDebug':
       clickerConfig.debug = message.enabled;
       debugLog(`Debug mode ${message.enabled ? 'enabled' : 'disabled'}`);
@@ -393,18 +485,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         startClicker();
       }
       break;
+    case 'stopSelection':
+      stopPointSelection();
+      break;
+    case 'resetState':
+      resetState();
+      break;
   }
 });
 
 // Load saved configuration
-chrome.storage.sync.get(['clickerPoint', 'clickInterval', 'debug'], (result) => {
+chrome.storage.sync.get(['clickerPoints', 'clickInterval', 'debug'], (result) => {
   debugLog('Loading saved configuration', result);
   
-  if (result.clickerPoint) {
-    clickerConfig.x = result.clickerPoint.x;
-    clickerConfig.y = result.clickerPoint.y;
-    clickerConfig.pointSelected = true;
-    debugLog('Restored click point', result.clickerPoint);
+  if (result.clickerPoints && result.clickerPoints.length > 0) {
+    clickerConfig.points = result.clickerPoints;
+    clickerConfig.pointSelected = clickerConfig.points.length > 0;
+    debugLog('Restored click points', result.clickerPoints);
   }
   if (result.clickInterval) {
     clickerConfig.interval = result.clickInterval * 1000;
@@ -429,7 +526,8 @@ function injectClickHandler(iframe) {
     const script = document.createElement('script');
     script.textContent = `
       window.addEventListener('message', function(event) {
-        if (event.data && event.data.type === 'rhythmklkClick') {
+        // Ensure data is properly formatted before processing
+        if (event.data && typeof event.data === 'object' && event.data.type === 'rhythmklkClick') {
           const x = event.data.coordinates.x;
           const y = event.data.coordinates.y;
           
@@ -539,7 +637,8 @@ if (document.readyState === 'loading') {
 
 // Listen for click confirmations from iframes
 window.addEventListener('message', event => {
-  if (event.data && event.data.type === 'rhythmklkResponse') {
+  // Ensure data is properly formatted before processing
+  if (event.data && typeof event.data === 'object' && event.data.type === 'rhythmklkResponse') {
     debugLog('Received click confirmation from iframe', event.data);
   }
 }); 

@@ -113,7 +113,7 @@
       color: white;
     }
 
-    button#selectPoint {
+    button#addPoint {
       background: var(--gradient-blue);
       grid-column: 1 / -1;
     }
@@ -135,7 +135,7 @@
       transform: translateY(0);
     }
 
-    button#selectPoint:disabled,
+    button#addPoint:disabled,
     button#startClicker:disabled,
     button#stopClicker:disabled {
       background: var(--gradient-disabled);
@@ -277,6 +277,69 @@
       font-weight: 600;
       color: var(--text);
     }
+
+    /* New styles for points list */
+    .points-list {
+      margin: 10px 0;
+      padding: 0;
+      list-style: none;
+      max-height: 100px;
+      overflow-y: auto;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+    }
+
+    .point-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 12px;
+    }
+
+    .point-item:last-child {
+      border-bottom: none;
+    }
+
+    .point-coords {
+      display: flex;
+      gap: 8px;
+    }
+
+    .point-remove {
+      background: none;
+      border: none;
+      color: var(--error);
+      cursor: pointer;
+      padding: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .points-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+
+    .points-title {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.8);
+      margin: 0;
+    }
+
+    .points-clear {
+      background: none;
+      border: none;
+      color: var(--error);
+      cursor: pointer;
+      font-size: 12px;
+      padding: 0;
+    }
   </style>
 </head>
 <body>
@@ -292,12 +355,23 @@
         <input type="number" id="interval" min="1" value="5">
       </div>
 
+      <!-- Points list section -->
+      <div class="points-section">
+        <div class="points-header">
+          <span class="points-title">Click Points</span>
+          <button class="points-clear" id="clearPoints">Clear All</button>
+        </div>
+        <ul id="pointsList" class="points-list">
+          <li class="point-item empty-message">No points added yet</li>
+        </ul>
+      </div>
+
       <div class="button-group">
-        <button id="selectPoint">
+        <button id="addPoint">
           <svg class="icon" viewBox="0 0 24 24">
-            <path d="M7,2L17,12L7,22L7,2M9,6.83L13.17,11L9,15.17V6.83Z"/>
+            <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
           </svg>
-          Choose Point
+          Add Points
         </button>
         <button id="startClicker" disabled>
           <svg class="icon" viewBox="0 0 24 24">
