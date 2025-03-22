@@ -1,8 +1,8 @@
 let clickerConfig = {
   points: [], // Array to store multiple click points
   currentPointIndex: 0, // Track which point to click next
-  interval: 5000, // Default 5 seconds
-  jitterRange: 1000, // ±1 second jitter
+  interval: 1000, // Default 1 second
+  jitterRange: 500, // ±0.5 second jitter
   isRunning: false,
   intervalId: null,
   debug: false, // Debug mode desabled by default
