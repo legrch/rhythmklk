@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let points = [];
   let startTime = null;
   let timerInterval = null;
+  const FIXED_JITTER_PERCENT = 10; // Fixed 10% jitter amount
 
   function updateStats() {
     if (startTime) {
@@ -177,6 +178,15 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize jitter setting (true by default if not set)
     jitterCheckbox.checked = result.jitter !== false;
+    
+    // Always set the fixed jitter percent when loading settings
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.tabs.sendMessage(tabs[0].id, { 
+        type: 'updateJitterPercent', 
+        percent: FIXED_JITTER_PERCENT 
+      });
+    });
+    chrome.storage.sync.set({ jitterPercent: FIXED_JITTER_PERCENT });
   });
 
   // Save interval when changed
