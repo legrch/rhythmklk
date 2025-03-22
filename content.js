@@ -117,7 +117,7 @@ function handlePointSelection(e) {
   
   // Store the validated coordinates in the points array
   clickerConfig.points.push(newPoint);
-  clickerConfig.pointSelected = true;
+  clickerConfig.pointSelected = clickerConfig.points.length > 0;
   
   // Save all points
   chrome.storage.sync.set({ 
@@ -286,7 +286,14 @@ function getNextInterval() {
 
 // Start auto clicker
 function startClicker() {
-  if (!clickerConfig.pointSelected || clickerConfig.points.length === 0) {
+  debugLog('Starting clicker with config', {
+    points: clickerConfig.points,
+    pointCount: clickerConfig.points.length,
+    pointSelected: clickerConfig.pointSelected,
+    isRunning: clickerConfig.isRunning
+  });
+
+  if (clickerConfig.points.length === 0) {
     showFeedback('Please select at least one click point first', 'error');
     debugLog('Start attempted without selected points');
     return;
@@ -394,6 +401,26 @@ function handleSelectionKeyPress(e) {
   }
 }
 
+// Function to reset clicker state
+function resetState() {
+  if (clickerConfig.isRunning) {
+    stopClicker();
+  }
+  
+  clickerConfig.points = [];
+  clickerConfig.pointSelected = false;
+  clickerConfig.currentPointIndex = 0;
+  
+  chrome.storage.sync.set({
+    clickerPoints: [],
+    isClicking: false
+  }, () => {
+    debugLog('Clicker state fully reset');
+  });
+  
+  showFeedback('Clicker state reset');
+}
+
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   debugLog('Message received', { type: message.type, data: message });
@@ -405,11 +432,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
       
       // Clear existing points when starting selection mode
-      clickerConfig.points = [];
-      clickerConfig.pointSelected = false;
-      
-      // Save empty points array
-      chrome.storage.sync.set({ clickerPoints: [] });
+      resetState();
       
       debugLog('Starting point selection mode with cleared points');
       document.addEventListener('click', handlePointSelection, true);
@@ -465,6 +488,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case 'stopSelection':
       stopPointSelection();
       break;
+    case 'resetState':
+      resetState();
+      break;
   }
 });
 
@@ -474,7 +500,7 @@ chrome.storage.sync.get(['clickerPoints', 'clickInterval', 'debug'], (result) =>
   
   if (result.clickerPoints && result.clickerPoints.length > 0) {
     clickerConfig.points = result.clickerPoints;
-    clickerConfig.pointSelected = true;
+    clickerConfig.pointSelected = clickerConfig.points.length > 0;
     debugLog('Restored click points', result.clickerPoints);
   }
   if (result.clickInterval) {

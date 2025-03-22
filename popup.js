@@ -148,6 +148,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (result.clickerPoints && result.clickerPoints.length > 0) {
       points = result.clickerPoints;
       renderPointsList();
+      
+      // Sync points with content script
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        chrome.tabs.sendMessage(tabs[0].id, { 
+          type: 'updatePoints', 
+          points: points 
+        });
+      });
     }
     
     const hasPoints = points.length > 0;
@@ -188,17 +196,22 @@ document.addEventListener('DOMContentLoaded', () => {
   // Handle point selection
   addPointButton.addEventListener('click', () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      // Clear local points array when starting selection
+      // Clear local points array
       points = [];
       renderPointsList();
       updateButtons(false, false);
       
       chrome.tabs.sendMessage(tabs[0].id, { 
-        type: 'startSelection',
-        shouldStopCurrent: false
+        type: 'resetState'
+      }, () => {
+        // After reset, start selection mode
+        chrome.tabs.sendMessage(tabs[0].id, { 
+          type: 'startSelection',
+          shouldStopCurrent: false
+        });
+        updateStatus('Click on the page to add points (multiple clicks allowed)', 'selecting');
+        window.close();
       });
-      updateStatus('Click on the page to add points (multiple clicks allowed)', 'selecting');
-      window.close();
     });
   });
   
