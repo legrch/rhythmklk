@@ -1,12 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
   const intervalInput = document.getElementById('interval');
-  const selectPointButton = document.getElementById('selectPoint');
+  const addPointButton = document.getElementById('addPoint');
   const startButton = document.getElementById('startClicker');
   const stopButton = document.getElementById('stopClicker');
   const statusElement = document.getElementById('status');
   const debugCheckbox = document.getElementById('debug');
   const runTimeElement = document.getElementById('runTime');
+  const pointsList = document.getElementById('pointsList');
+  const clearPointsButton = document.getElementById('clearPoints');
 
+  let points = [];
   let startTime = null;
   let timerInterval = null;
 
@@ -41,53 +44,124 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log(`[RhythmKlk Popup] ${message}`);
   }
 
-  function updateButtons(hasPoint, isRunning) {
-    startButton.disabled = !hasPoint || isRunning;
+  function updateButtons(hasPoints, isRunning) {
+    startButton.disabled = !hasPoints || isRunning;
     stopButton.disabled = !isRunning;
+    clearPointsButton.disabled = isRunning;
     
-    if (hasPoint) {
-      selectPointButton.innerHTML = `
-        <svg class="icon" viewBox="0 0 24 24">
-          <path d="M19,19H5V5H19V19M19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M13,17H15V7H13V17M9,17H11V7H9V17Z"/>
-        </svg>
-        Change Point
-      `;
-    } else {
-      selectPointButton.innerHTML = `
-        <svg class="icon" viewBox="0 0 24 24">
-          <path d="M7,2L17,12L7,22L7,2M9,6.83L13.17,11L9,15.17V6.83Z"/>
-        </svg>
-        Select Point
-      `;
-    }
-
     if (isRunning) {
       statusElement.classList.add('running');
     } else {
       statusElement.classList.remove('running');
     }
   }
+  
+  function renderPointsList() {
+    pointsList.innerHTML = '';
+    
+    if (points.length === 0) {
+      const emptyMessage = document.createElement('li');
+      emptyMessage.className = 'point-item empty-message';
+      emptyMessage.textContent = 'No points added yet';
+      pointsList.appendChild(emptyMessage);
+      return;
+    }
+    
+    points.forEach((point, index) => {
+      const listItem = document.createElement('li');
+      listItem.className = 'point-item';
+      
+      const pointCoords = document.createElement('div');
+      pointCoords.className = 'point-coords';
+      pointCoords.textContent = `Point ${index + 1}: (${Math.round(point.x)}, ${Math.round(point.y)})`;
+      
+      const removeButton = document.createElement('button');
+      removeButton.className = 'point-remove';
+      removeButton.innerHTML = '<svg class="icon" width="16" height="16" viewBox="0 0 24 24"><path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" /></svg>';
+      removeButton.title = 'Remove point';
+      removeButton.dataset.index = index;
+      
+      removeButton.addEventListener('click', (e) => {
+        const idx = parseInt(e.currentTarget.dataset.index);
+        removePoint(idx);
+      });
+      
+      listItem.appendChild(pointCoords);
+      listItem.appendChild(removeButton);
+      pointsList.appendChild(listItem);
+    });
+  }
+  
+  function removePoint(index) {
+    points.splice(index, 1);
+    
+    // Update storage
+    chrome.storage.sync.set({ clickerPoints: points });
+    
+    // Update UI
+    renderPointsList();
+    updateButtons(points.length > 0, false);
+    
+    if (points.length === 0) {
+      updateStatus('No points selected');
+    } else {
+      updateStatus(`${points.length} points - Ready to start`);
+    }
+    
+    // Update content script
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.tabs.sendMessage(tabs[0].id, { 
+        type: 'updatePoints', 
+        points: points 
+      });
+    });
+  }
+  
+  function clearAllPoints() {
+    points = [];
+    
+    // Update storage
+    chrome.storage.sync.set({ clickerPoints: [] });
+    
+    // Update UI
+    renderPointsList();
+    updateButtons(false, false);
+    updateStatus('No points selected');
+    
+    // Update content script
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.tabs.sendMessage(tabs[0].id, { 
+        type: 'updatePoints', 
+        points: [] 
+      });
+    });
+  }
 
   // Load saved settings
-  chrome.storage.sync.get(['clickInterval', 'isClicking', 'debug', 'clickerPoint'], (result) => {
+  chrome.storage.sync.get(['clickerPoints', 'clickInterval', 'isClicking', 'debug'], (result) => {
     console.log('[RhythmKlk Popup] Loading saved settings:', result);
     
     if (result.clickInterval) {
       intervalInput.value = result.clickInterval;
     }
 
-    const hasPoint = !!result.clickerPoint;
+    if (result.clickerPoints && result.clickerPoints.length > 0) {
+      points = result.clickerPoints;
+      renderPointsList();
+    }
+    
+    const hasPoints = points.length > 0;
     const isRunning = !!result.isClicking;
     
-    updateButtons(hasPoint, isRunning);
+    updateButtons(hasPoints, isRunning);
     
     if (isRunning) {
       updateStatus('RhythmKlk is running', 'running');
       startTimer();
-    } else if (hasPoint) {
-      updateStatus('Point selected - Ready to start');
+    } else if (hasPoints) {
+      updateStatus(`${points.length} points - Ready to start`);
     } else {
-      updateStatus('Select a point to begin');
+      updateStatus('Select at least one point to begin');
     }
 
     debugCheckbox.checked = result.debug !== false;
@@ -112,19 +186,41 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Handle point selection
-  selectPointButton.addEventListener('click', () => {
+  addPointButton.addEventListener('click', () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      // Clear local points array when starting selection
+      points = [];
+      renderPointsList();
+      updateButtons(false, false);
+      
       chrome.tabs.sendMessage(tabs[0].id, { 
         type: 'startSelection',
-        shouldStopCurrent: true
+        shouldStopCurrent: false
       });
-      updateStatus('Click on the page to select point', 'selecting');
+      updateStatus('Click on the page to add points (multiple clicks allowed)', 'selecting');
       window.close();
     });
   });
+  
+  // Handle clear all points
+  clearPointsButton.addEventListener('click', () => {
+    if (points.length > 0) {
+      clearAllPoints();
+    }
+  });
+
+  // Function to stop point selection mode
+  function stopSelection() {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.tabs.sendMessage(tabs[0].id, { type: 'stopSelection' });
+    });
+  }
 
   // Handle start clicking
   startButton.addEventListener('click', () => {
+    // Stop any ongoing selection first
+    stopSelection();
+    
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       chrome.tabs.sendMessage(tabs[0].id, { type: 'start' });
       chrome.storage.sync.set({ isClicking: true });
@@ -163,11 +259,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // Listen for point selection and badge updates
   chrome.runtime.onMessage.addListener((message) => {
     if (message.type === 'pointSelected') {
-      updateButtons(true, false);
-      updateStatus('Point selected - Ready to start');
+      if (message.point) {
+        // Add the point to our local array
+        points.push(message.point);
+        renderPointsList();
+      }
+      updateButtons(points.length > 0, false);
+      updateStatus(`${points.length} points added - click more or press Start`, 'selecting');
+    } else if (message.type === 'selectionCompleted') {
+      updateButtons(points.length > 0, false);
+      updateStatus(`${points.length} points ready - Press Start to begin`, '');
     } else if (message.type === 'updateBadge') {
       // Update button states when badge state changes
-      updateButtons(true, message.isRunning);
+      updateButtons(points.length > 0, message.isRunning);
       if (message.isRunning) {
         updateStatus('RhythmKlk is running', 'running');
         startTimer();
