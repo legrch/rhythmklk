@@ -56,6 +56,7 @@ tasks:
     cmds:
       - |
         VERSION="{{.VERSION}}" && \
+        export VERSION && \
         TITLE=$(yq eval '.title' {{.RELEASE_CONFIG}} | envsubst) && \
         NOTES=$(yq eval '.notes' {{.RELEASE_CONFIG}} | envsubst) && \
         gh release create v${VERSION} rhythmklk.zip \
@@ -71,6 +72,7 @@ tasks:
     cmds:
       - |
         VERSION="{{.VERSION}}" && \
+        export VERSION && \
         TITLE=$(yq eval '.dev.title' {{.RELEASE_CONFIG}} | envsubst) && \
         NOTES=$(yq eval '.dev.notes' {{.RELEASE_CONFIG}} | envsubst) && \
         gh release create v${VERSION} rhythmklk.zip \
