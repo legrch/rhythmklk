@@ -2,7 +2,8 @@ let clickerConfig = {
   points: [], // Array to store multiple click points
   currentPointIndex: 0, // Track which point to click next
   interval: 1000, // Default 1 second
-  jitterRange: 500, // ±0.5 second jitter
+  jitterPercent: 10, // Default 10% jitter
+  jitterEnabled: true, // Jitter enabled by default
   isRunning: false,
   intervalId: null,
   debug: false, // Debug mode desabled by default
@@ -274,14 +275,22 @@ function performClick() {
 
 // Get next interval with jitter
 function getNextInterval() {
-  const jitter = (Math.random() * 2 - 1) * clickerConfig.jitterRange; // Random value between -jitterRange and +jitterRange
-  const nextInterval = clickerConfig.interval + jitter;
-  debugLog('Next interval calculated', {
-    baseInterval: clickerConfig.interval,
-    jitter,
-    nextInterval
-  });
-  return Math.max(nextInterval, 1000); // Ensure minimum 1 second interval
+  if (clickerConfig.jitterEnabled) {
+    const jitterFactor = (Math.random() * 2 - 1) * (clickerConfig.jitterPercent / 100); // Random value between -jitterPercent% and +jitterPercent%
+    const nextInterval = clickerConfig.interval * (1 + jitterFactor);
+    debugLog('Next interval calculated with jitter', {
+      baseInterval: clickerConfig.interval,
+      jitterPercent: clickerConfig.jitterPercent,
+      jitterFactor,
+      nextInterval
+    });
+    return Math.max(nextInterval, 1000); // Ensure minimum 1 second interval
+  } else {
+    debugLog('Next interval without jitter', {
+      interval: clickerConfig.interval
+    });
+    return clickerConfig.interval;
+  }
 }
 
 // Start auto clicker
@@ -317,7 +326,7 @@ function startClicker() {
   
   debugLog('RhythmKlk started', {
     interval: clickerConfig.interval,
-    jitterRange: clickerConfig.jitterRange,
+    jitterPercent: clickerConfig.jitterPercent,
     points: clickerConfig.points
   });
   showFeedback('RhythmKlk Started');
@@ -461,6 +470,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         debugLog('Interval timer reset with new value');
       }
       break;
+    case 'updateJitterPercent':
+      clickerConfig.jitterPercent = message.percent;
+      debugLog('Jitter percent updated', {
+        oldPercent: clickerConfig.jitterPercent,
+        newPercent: message.percent
+      });
+      break;
     case 'updatePoints':
       clickerConfig.points = message.points || [];
       clickerConfig.pointSelected = clickerConfig.points.length > 0;
@@ -491,11 +507,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case 'resetState':
       resetState();
       break;
+    case 'setJitter':
+      clickerConfig.jitterEnabled = message.enabled;
+      debugLog(`Jitter mode ${message.enabled ? 'enabled' : 'disabled'}`);
+      break;
   }
 });
 
 // Load saved configuration
-chrome.storage.sync.get(['clickerPoints', 'clickInterval', 'debug'], (result) => {
+chrome.storage.sync.get(['clickerPoints', 'clickInterval', 'debug', 'jitter'], (result) => {
   debugLog('Loading saved configuration', result);
   
   if (result.clickerPoints && result.clickerPoints.length > 0) {
@@ -511,6 +531,12 @@ chrome.storage.sync.get(['clickerPoints', 'clickInterval', 'debug'], (result) =>
     clickerConfig.debug = result.debug;
     debugLog('Restored debug mode setting', { debug: clickerConfig.debug });
   }
+  if (typeof result.jitter !== 'undefined') {
+    clickerConfig.jitterEnabled = result.jitter;
+    debugLog('Restored jitter setting', { jitter: clickerConfig.jitterEnabled });
+  }
+  // Note: jitterPercent is kept at its default value (10%)
+  debugLog('Using fixed jitter percent', { jitterPercent: clickerConfig.jitterPercent });
 });
 
 // Ensure clicker stops when page unloads
